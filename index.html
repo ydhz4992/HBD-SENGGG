@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HBD NASYWA 💗</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#000;overflow:hidden;width:100vw;height:100vh;}
+#matrixCanvas{position:fixed;top:0;left:0;z-index:1;}
+#dotCanvas{position:fixed;top:0;left:0;z-index:10;pointer-events:none;}
+#heartStage{position:fixed;top:0;left:0;width:100%;height:100%;z-index:20;display:none;align-items:center;justify-content:center;flex-direction:column;}
+#heartSvg{filter:drop-shadow(0 0 30px #ff1493) drop-shadow(0 0 60px #ff69b4);}
+.name-wrap{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;}
+.hname{font-family:'Great Vibes',cursive;font-size:clamp(36px,7vw,68px);color:#fff;text-shadow:0 0 10px #fff,0 0 25px #ffb6d9,0 0 50px #ff69b4;animation:nameGlow 1.8s ease-in-out infinite alternate;line-height:1.2;}
+.hsub{font-family:'Great Vibes',cursive;font-size:clamp(22px,4.5vw,42px);color:#ffd6ec;text-shadow:0 0 8px #ff69b4,0 0 20px #ff1493;animation:nameGlow 1.8s ease-in-out 0.4s infinite alternate;}
+@keyframes nameGlow{
+  from{text-shadow:0 0 8px #fff,0 0 15px #ffb6d9,0 0 30px #ff69b4;}
+  to{text-shadow:0 0 20px #fff,0 0 40px #ffb6d9,0 0 80px #ff1493;}
+}
+
+/* ── BIRTHDAY MESSAGE ── */
+#heartSvg{
+  cursor:pointer;
+  transition:filter .25s ease;
+}
+#heartSvg:hover{
+  filter:drop-shadow(0 0 38px #ff1493) drop-shadow(0 0 75px #ff69b4);
+}
+#birthdayMessage{
+  position:fixed;
+  inset:0;
+  z-index:100;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  background:rgba(0,0,0,.72);
+  backdrop-filter:blur(5px);
+}
+#birthdayMessage.show{
+  display:flex;
+  animation:messageFade .45s ease forwards;
+}
+.message-card{
+  width:min(90vw,520px);
+  padding:32px 26px;
+  border:2px solid rgba(255,182,217,.75);
+  border-radius:28px;
+  background:linear-gradient(145deg,rgba(255,20,147,.96),rgba(123,0,53,.96));
+  box-shadow:0 0 35px #ff1493,0 0 90px rgba(255,105,180,.55);
+  text-align:center;
+  color:#fff;
+  animation:messagePop .55s cubic-bezier(.2,.8,.2,1);
+}
+.message-card h2{
+  font-family:'Great Vibes',cursive;
+  font-size:clamp(42px,10vw,64px);
+  margin-bottom:12px;
+  text-shadow:0 0 12px #fff,0 0 28px #ffb6d9;
+}
+.message-card p{
+  font-family:Arial,sans-serif;
+  font-size:clamp(16px,4vw,20px);
+  line-height:1.7;
+  color:#ffeaf5;
+}
+.close-message{
+  margin-top:22px;
+  border:1px solid #fff;
+  border-radius:999px;
+  padding:10px 22px;
+  background:rgba(255,255,255,.14);
+  color:#fff;
+  font-size:15px;
+  cursor:pointer;
+}
+.close-message:hover{background:rgba(255,255,255,.25);}
+@keyframes messageFade{
+  from{opacity:0}to{opacity:1}
+}
+@keyframes messagePop{
+  from{opacity:0;transform:scale(.75) translateY(20px)}
+  to{opacity:1;transform:scale(1) translateY(0)}
+}
+
+</style>
+</head>
+<body>
+<canvas id="matrixCanvas"></canvas>
+<canvas id="dotCanvas"></canvas>
+<div id="heartStage">
+  <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+    <svg id="heartSvg" viewBox="0 0 400 380" style="width:min(88vw,88vh);height:min(88vw,88vh);"></svg>
+    <div class="name-wrap">
+      <div class="hname">Nawaaa</div>
+      <div class="hsub">👩‍❤️‍💋‍👨</div>
+    </div>
+  </div>
+</div>
+
+<div id="birthdayMessage" aria-hidden="true">
+  <div class="message-card" role="dialog" aria-modal="true" aria-labelledby="birthdayTitle">
+    <h2 id="birthdayTitle">Happy Birthday, Nawaaa! 💗</h2>
+    <p>
+      Selamat ulang tahun, Sayangg! 🎂✨<br>
+      happy levell uppp dayyy!!! ciee udah 19 tahun,
+      ga kerasa ya kamu udah ultah ke 2 semenjak hadir di hidupku:))
+      semoga di umur yang baru ini kamu makin cantik, makin sehat,
+      makin sukses, makin bahagia plus JANGAN MARAH MARAH SAMA AKU TERUS😘
+      WKWKWKWKWKWKWKWK
+       💕
+      <br><br>
+      from your love, yudhizzz❤️
+    </p>
+    <button class="close-message" id="closeMessage">Tutup 💗</button>
+  </div>
+</div>
+
+<script>
+// ── MATRIX RAIN ──
+const mc = document.getElementById('matrixCanvas');
+const mx = mc.getContext('2d');
+mc.width = window.innerWidth; mc.height = window.innerHeight;
+const chars = 'アイウエオカキ0123456789LOVE♥❤';
+const fs = 13;
+let cols = Math.floor(mc.width/fs);
+let drops = Array.from({length:cols},()=>Math.random()*-80);
+const pinks = ['#ff69b4','#ff1493','#ffb6d9','#ff4d94','#ff85c2','#e91e8c','#c2185b'];
+function drawMatrix(){
+  mx.fillStyle='rgba(0,0,0,0.055)';
+  mx.fillRect(0,0,mc.width,mc.height);
+  for(let i=0;i<cols;i++){
+    mx.fillStyle=pinks[Math.floor(Math.random()*pinks.length)];
+    mx.font=fs+'px monospace';
+    mx.fillText(chars[Math.floor(Math.random()*chars.length)],i*fs,drops[i]*fs);
+    if(drops[i]*fs>mc.height&&Math.random()>0.975) drops[i]=0;
+    drops[i]++;
+  }
+}
+const matrixTimer = setInterval(drawMatrix,34);
+
+// ── DOT CANVAS ──
+const dc = document.getElementById('dotCanvas');
+const ctx = dc.getContext('2d');
+dc.width = window.innerWidth; dc.height = window.innerHeight;
+
+// ── PIXEL FONT MAP (7x9 grid for each char) ──
+const FONT = {
+  'B':[[1,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,1,1,1,0],[0,0,0,0,0],[0,0,0,0,0]],
+  'H':[[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,1,1,1,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[0,0,0,0,0],[0,0,0,0,0]],
+  'D':[[1,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,1,1,1,0],[0,0,0,0,0],[0,0,0,0,0]],
+  '3':[[0,1,1,1,0],[1,0,0,0,1],[0,0,0,0,1],[0,1,1,1,0],[0,0,0,0,1],[1,0,0,0,1],[0,1,1,1,0],[0,0,0,0,0],[0,0,0,0,0]],
+  '2':[[0,1,1,1,0],[1,0,0,0,1],[0,0,0,0,1],[0,0,1,1,0],[0,1,0,0,0],[1,0,0,0,0],[1,1,1,1,1],[0,0,0,0,0],[0,0,0,0,0]],
+  '1':[[0,0,1,0,0],[0,1,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,1,1,1,0],[0,0,0,0,0],[0,0,0,0,0]],
+  'Y':[[1,0,0,0,1],[1,0,0,0,1],[0,1,0,1,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,1,0,0],[0,0,0,0,0],[0,0,0,0,0]],
+  'O':[[0,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[0,1,1,1,0],[0,0,0,0,0],[0,0,0,0,0]],
+  'U':[[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[0,1,1,1,0],[0,0,0,0,0],[0,0,0,0,0]],
+  'A':[[0,0,1,0,0],[0,1,0,1,0],[1,0,0,0,1],[1,1,1,1,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[0,0,0,0,0],[0,0,0,0,0]],
+  'R':[[1,1,1,1,0],[1,0,0,0,1],[1,0,0,0,1],[1,1,1,1,0],[1,0,1,0,0],[1,0,0,1,0],[1,0,0,0,1],[0,0,0,0,0],[0,0,0,0,0]],
+  'E':[[1,1,1,1,1],[1,0,0,0,0],[1,0,0,0,0],[1,1,1,1,0],[1,0,0,0,0],[1,0,0,0,0],[1,1,1,1,1],[0,0,0,0,0],[0,0,0,0,0]],
+  'M':[[1,0,0,0,1],[1,1,0,1,1],[1,0,1,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[0,0,0,0,0],[0,0,0,0,0]],
+  'L':[[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,0,0,0,0],[1,1,1,1,1],[0,0,0,0,0],[0,0,0,0,0]],
+  'V':[[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[1,0,0,0,1],[0,1,0,1,0],[0,1,0,1,0],[0,0,1,0,0],[0,0,0,0,0],[0,0,0,0,0]],
+};
+
+// Build multi-char pixel map
+function buildPixels(str){
+  const gap=1;
+  const totalW=(5+gap)*str.length - gap;
+  const out=[];
+  for(let c=0;c<str.length;c++){
+    const map=FONT[str[c]]||FONT['A'];
+    for(let row=0;row<9;row++){
+      for(let col=0;col<5;col++){
+        if(map[row]&&map[row][col]){
+          out.push({cx:col+(5+gap)*c, cy:row, totalW});
+        }
+      }
+    }
+  }
+  return out;
+}
+
+// ── DOT SYSTEM ──
+const DOT_R = 7;
+const DOT_GAP = 16;
+
+class Dot {
+  constructor(tx,ty){
+    this.tx=tx; this.ty=ty;
+    this.x=Math.random()*dc.width;
+    this.y=Math.random()*dc.height;
+    this.vx=0; this.vy=0;
+    this.r=DOT_R*(0.7+Math.random()*0.6);
+    // white with very slight pink tint like photo
+    const whites=['#ffffff','#fff0f5','#ffe4f0','#ffffff','#ffffff'];
+    this.color=whites[Math.floor(Math.random()*whites.length)];
+    this.alpha=0;
+  }
+  update(){
+    const dx=this.tx-this.x, dy=this.ty-this.y;
+    this.vx+=dx*0.09; this.vy+=dy*0.09;
+    this.vx*=0.72; this.vy*=0.72;
+    this.x+=this.vx; this.y+=this.vy;
+    this.alpha=Math.min(1,this.alpha+0.04);
+  }
+  draw(){
+    ctx.save();
+    ctx.globalAlpha=this.alpha;
+    ctx.beginPath();
+    ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
+    ctx.fillStyle=this.color;
+    ctx.shadowColor='#ffffff';
+    ctx.shadowBlur=18;
+    ctx.fill();
+    // bright center
+    ctx.beginPath();
+    ctx.arc(this.x,this.y,this.r*0.4,0,Math.PI*2);
+    ctx.fillStyle='#fff';
+    ctx.shadowBlur=6;
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+let dots=[];
+let animId=null;
+
+function getTargets(str){
+  const pixels=buildPixels(str);
+  const W=dc.width, H=dc.height;
+  const cols5=pixels.reduce((m,p)=>Math.max(m,p.cx),0)+1;
+  const rows9=9;
+  const totalW=cols5*DOT_GAP;
+  const totalH=rows9*DOT_GAP;
+  const ox=(W-totalW)/2;
+  const oy=(H-totalH)/2;
+  return pixels.map(p=>({
+    x: ox + p.cx*DOT_GAP + DOT_GAP/2,
+    y: oy + p.cy*DOT_GAP + DOT_GAP/2
+  }));
+}
+
+function showDots(str){
+  const targets=getTargets(str);
+  // reuse or create dots
+  while(dots.length<targets.length) dots.push(new Dot(0,0));
+  dots.length=targets.length;
+  targets.forEach((t,i)=>{
+    dots[i].tx=t.x; dots[i].ty=t.y;
+    dots[i].alpha=Math.max(0,dots[i].alpha-0.1);
+  });
+}
+
+function animDots(){
+  ctx.clearRect(0,0,dc.width,dc.height);
+  dots.forEach(d=>{d.update();d.draw();});
+  animId=requestAnimationFrame(animDots);
+}
+animDots();
+
+// ── SEQUENCE ──
+const sequence=[
+  {str:'3',dur:1000},
+  {str:'2',dur:1000},
+  {str:'1',dur:1000},
+  {str:'H B D',dur:1200},
+  {str:'M Y',dur:1200},
+  {str:'L O V E',dur:1400},
+];
+
+// remap spaced strings
+function parseStr(s){
+  return s.split(' ').join('');
+}
+
+let step=0;
+function nextStep(){
+  if(step>=sequence.length){
+    showHeart();
+    return;
+  }
+  const s=sequence[step];
+  showDots(parseStr(s.str));
+  step++;
+  setTimeout(nextStep, s.dur+400);
+}
+
+// start after 0.8s matrix rain
+setTimeout(nextStep,800);
+
+// ── HEART ──
+function showHeart(){
+  cancelAnimationFrame(animId);
+  ctx.clearRect(0,0,dc.width,dc.height);
+  clearInterval(matrixTimer);
+  mx.clearRect(0,0,mc.width,mc.height);
+
+  const stage=document.getElementById('heartStage');
+  stage.style.display='flex';
+
+  buildSVGHeart();
+
+  // Love/heart dapat diklik untuk menampilkan ucapan ulang tahun.
+  const heartSvg = document.getElementById('heartSvg');
+  const birthdayMessage = document.getElementById('birthdayMessage');
+  const closeMessage = document.getElementById('closeMessage');
+
+  heartSvg.addEventListener('click', () => {
+    birthdayMessage.classList.add('show');
+    birthdayMessage.setAttribute('aria-hidden', 'false');
+  });
+
+  closeMessage.addEventListener('click', (e) => {
+    e.stopPropagation();
+    birthdayMessage.classList.remove('show');
+    birthdayMessage.setAttribute('aria-hidden', 'true');
+  });
+
+  birthdayMessage.addEventListener('click', (e) => {
+    if (e.target === birthdayMessage) {
+      birthdayMessage.classList.remove('show');
+      birthdayMessage.setAttribute('aria-hidden', 'true');
+    }
+  });
+}
+
+function buildSVGHeart(){
+  const svg=document.getElementById('heartSvg');
+  const ns='http://www.w3.org/2000/svg';
+
+  // defs
+  const defs=document.createElementNS(ns,'defs');
+
+  // radial gradient
+  const rg=document.createElementNS(ns,'radialGradient');
+  rg.setAttribute('id','hg'); rg.setAttribute('cx','45%'); rg.setAttribute('cy','38%'); rg.setAttribute('r','65%');
+  [{o:'0%',c:'#ff85c2'},{o:'40%',c:'#ff1493'},{o:'75%',c:'#c2185b'},{o:'100%',c:'#7b0035'}].forEach(({o,c})=>{
+    const s=document.createElementNS(ns,'stop');
+    s.setAttribute('offset',o); s.setAttribute('stop-color',c);
+    rg.appendChild(s);
+  });
+  defs.appendChild(rg);
+
+  // outer glow filter
+  const f=document.createElementNS(ns,'filter');
+  f.setAttribute('id','glow'); f.setAttribute('x','-40%'); f.setAttribute('y','-40%');
+  f.setAttribute('width','180%'); f.setAttribute('height','180%');
+  const blur=document.createElementNS(ns,'feGaussianBlur');
+  blur.setAttribute('stdDeviation','8'); blur.setAttribute('result','b');
+  const mg=document.createElementNS(ns,'feMerge');
+  ['b','SourceGraphic'].forEach(n=>{
+    const mn=document.createElementNS(ns,'feMergeNode');
+    mn.setAttribute('in',n); mg.appendChild(mn);
+  });
+  f.appendChild(blur); f.appendChild(mg);
+  defs.appendChild(f);
+
+  svg.appendChild(defs);
+
+  // heart path (400x380 viewBox)
+  const hp='M 200 340 C 200 340 30 230 30 120 C 30 60 75 30 120 32 C 148 33 175 52 200 78 C 225 52 252 33 280 32 C 325 30 370 60 370 120 C 370 230 200 340 200 340 Z';
+
+  // outer glow heart (larger, blurred)
+  const glow1=document.createElementNS(ns,'path');
+  glow1.setAttribute('d',hp);
+  glow1.setAttribute('fill','#ff1493');
+  glow1.setAttribute('opacity','0.25');
+  glow1.setAttribute('filter','url(#glow)');
+  glow1.setAttribute('transform','scale(1.08) translate(-15,-12)');
+  svg.appendChild(glow1);
+
+  // main heart
+  const heart=document.createElementNS(ns,'path');
+  heart.setAttribute('d',hp);
+  heart.setAttribute('fill','url(#hg)');
+  svg.appendChild(heart);
+
+  // inner highlight arc
+  const hi=document.createElementNS(ns,'ellipse');
+  hi.setAttribute('cx','155'); hi.setAttribute('cy','110');
+  hi.setAttribute('rx','55'); hi.setAttribute('ry','35');
+  hi.setAttribute('fill','rgba(255,255,255,0.12)');
+  hi.setAttribute('transform','rotate(-30,155,110)');
+  svg.appendChild(hi);
+
+  // rim glow stroke
+  const rim=document.createElementNS(ns,'path');
+  rim.setAttribute('d',hp);
+  rim.setAttribute('fill','none');
+  rim.setAttribute('stroke','#ffb6d9');
+  rim.setAttribute('stroke-width','3');
+  rim.setAttribute('opacity','0.55');
+  svg.appendChild(rim);
+
+  // sparkle dots on heart edge
+  const edgePts=[
+    [200,78],[120,60],[80,90],[50,140],[55,190],[90,240],[140,290],[200,340],
+    [260,290],[310,240],[345,190],[350,140],[320,90],[280,60],[200,78]
+  ];
+  // sample every other
+  edgePts.filter((_,i)=>i%2===0).forEach((p,i)=>{
+    const c=document.createElementNS(ns,'circle');
+    c.setAttribute('cx',p[0]); c.setAttribute('cy',p[1]); c.setAttribute('r','4');
+    c.setAttribute('fill','#fff'); c.setAttribute('opacity','0.7');
+    c.style.animation=`sparkPulse ${1+i*0.15}s ease-in-out ${i*0.1}s infinite alternate`;
+    svg.appendChild(c);
+  });
+
+  // mini floating hearts inside (as text)
+  const mhPos=[[145,155],[240,140],[175,210],[220,210],[200,170]];
+  const mhEmoji=['💗','💕','💓','💖','❤️'];
+  mhPos.forEach((p,i)=>{
+    const t=document.createElementNS(ns,'text');
+    t.setAttribute('x',p[0]); t.setAttribute('y',p[1]);
+    t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','22');
+    t.textContent=mhEmoji[i];
+    t.style.animation=`floatHeart ${2+i*0.3}s ease-in-out ${i*0.2}s infinite alternate`;
+    svg.appendChild(t);
+  });
+
+  // inject keyframes
+  const style=document.createElement('style');
+  style.textContent=`
+    @keyframes sparkPulse{from{opacity:0.3;r:3}to{opacity:1;r:6}}
+    @keyframes floatHeart{from{transform:translateY(0)}to{transform:translateY(-10px)}}
+    #heartSvg{animation:heartBeat 1.1s ease-in-out infinite;}
+    @keyframes heartBeat{
+      0%,100%{transform:scale(1);}
+      14%{transform:scale(1.07);}
+      28%{transform:scale(1.01);}
+      42%{transform:scale(1.05);}
+      56%{transform:scale(1.01);}
+    }
+    #heartStage{animation:fadeInHeart 1.2s ease forwards;}
+    @keyframes fadeInHeart{from{opacity:0}to{opacity:1}}
+  `;
+  document.head.appendChild(style);
+}
+</script>
+</body>
+</html>
